@@ -109,8 +109,12 @@ func (s *session) prepare(t *transfer, sql string) (driver.Stmt, error) {
 	return stmt, nil
 }
 
-func (s *session) executeQuery(stmt *h2stmt, t *transfer) ([]string, int32, error) {
+func (s *session) executeQuery(stmt *h2stmt, t *transfer, values []driver.Value) ([]string, int32, error) {
 	var err error
+	if stmt.numParams != int32(len(values)) {
+		panic("")
+		return nil, -1, fmt.Errorf("Num expected parameters mismatch: %d != %d", stmt.numParams, len(values))
+	}
 	// 0. Write COMMAND EXECUTE QUERY
 	L(log.DebugLevel, "Execute query")
 	err = t.writeInt32(sessionCommandExecuteQuery)
@@ -139,13 +143,26 @@ func (s *session) executeQuery(stmt *h2stmt, t *transfer) ([]string, int32, erro
 	if err != nil {
 		return nil, -1, err
 	}
-	// 4. Write Fetch max size
-	err = t.writeInt32(0)
+	// 5. Write parameters
+	// -- num parameters
+	err = t.writeInt32(stmt.numParams)
 	if err != nil {
 		return nil, -1, err
 	}
+	// -- parameters
+	for idx, value := range values {
+		switch value.(type) {
+		case time.Time:
+			err = t.writeDatetimeValue(value.(time.Time), stmt.parameters[idx])
+		default:
+			err = t.writeValue(value)
+		}
+		if err != nil {
+			return nil, -1, err
+		}
+	}
 
-	// 5. Flush data
+	// 6. Flush data
 	err = t.flush()
 	if err != nil {
 		return nil, -1, err

@@ -104,7 +104,7 @@ func parseURL(dsnurl string) (h2connInfo, error) {
 		ci.port = defaultH2port
 	}
 	// Set database
-	if ci.database = u.Path; len(ci.database) == 0 {
+	if ci.database = strings.TrimPrefix(u.Path, "/"); len(ci.database) == 0 {
 		ci.database = "~/test"
 	}
 	// Username & password
