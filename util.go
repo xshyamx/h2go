@@ -18,6 +18,7 @@ package h2go
 
 import (
 	"crypto/sha256"
+	"database/sql/driver"
 	"fmt"
 	"strings"
 
@@ -40,4 +41,13 @@ func L(level log.Level, text string, args ...interface{}) {
 		return
 	}
 	log.StandardLogger().Logf(level, text, args...)
+}
+
+// Convert `driver.NamedValue` to `driver.Value`
+func toValues(args []driver.NamedValue) []driver.Value {
+	var argsValues []driver.Value
+	for _, arg := range args {
+		argsValues = append(argsValues, arg.Value)
+	}
+	return argsValues
 }

@@ -116,14 +116,6 @@ func (h2c *h2Conn) QueryContext(ctx context.Context, query string, args []driver
 	return &h2Result{query: query, columns: cols, numRows: nRows, trans: &h2c.client.trans, curRow: 0}, nil
 }
 
-func toValues(args []driver.NamedValue) []driver.Value {
-	var argsValues []driver.Value
-	for _, arg := range args {
-		argsValues = append(argsValues, arg.Value)
-	}
-	return argsValues
-}
-
 func (h2c *h2Conn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
 	L(log.DebugLevel, "ExecContext: %s", query)
 	var err error

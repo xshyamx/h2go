@@ -55,7 +55,7 @@ func (h2s h2stmt) NumInput() int {
 
 // Interface StmtQueryContext
 func (h2s h2stmt) QueryContext(ctx context.Context, args []driver.NamedValue) (driver.Rows, error) {
-	cols, nRows, err := h2s.client.sess.executeQuery(&h2s, &h2s.client.trans)
+	cols, nRows, err := h2s.client.sess.executeQuery(&h2s, &h2s.client.trans, toValues(args))
 	if err != nil {
 		return nil, err
 	}
@@ -64,11 +64,7 @@ func (h2s h2stmt) QueryContext(ctx context.Context, args []driver.NamedValue) (d
 
 // Interface StmtExecContext
 func (h2s h2stmt) ExecContext(ctx context.Context, args []driver.NamedValue) (driver.Result, error) {
-	var argsValues []driver.Value
-	for _, arg := range args {
-		argsValues = append(argsValues, arg.Value)
-	}
-	nUpdated, err := h2s.client.sess.executeQueryUpdate(&h2s, &h2s.client.trans, argsValues)
+	nUpdated, err := h2s.client.sess.executeQueryUpdate(&h2s, &h2s.client.trans, toValues(args))
 	if err != nil {
 		return nil, err
 	}
