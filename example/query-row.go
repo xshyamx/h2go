@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"time"
 
@@ -26,18 +27,22 @@ func main() {
 	conn, err := sql.Open("h2", "h2://sa@localhost/test")
 	must("Open connection", err)
 	defer conn.Close()
-	//// Create table
-	//log.Printf("CREATE TABLE")
-	//_, err = conn.Exec("CREATE TABLE IF NOT EXISTS test (id int auto_increment, name varchar(50), age int)")
-	//must("Create table", err)
-	//// Insert
-	//log.Printf("Insert")
-	//stmt, err := conn.Prepare("INSERT INTO test(name, age) VALUES(?, ?)")
-	//must("Prepare statement", err)
-	//for i, name := range []string{"John", "Jane", "Jack", "Jill"} {
-	//	_, err := stmt.Exec(name, i+30)
-	//	must(fmt.Sprintf("Inserting %s", name), err)
-	//}
+	// Drop table if exists
+	log.Printf("DROP TABLE")
+	_, err = conn.Exec("DROP TABLE test IF EXISTS")
+	must("Drop table", err)
+	// Create table
+	log.Printf("CREATE TABLE")
+	_, err = conn.Exec("CREATE TABLE IF NOT EXISTS test (id int auto_increment, name varchar(50), age int)")
+	must("Create table", err)
+	// Insert
+	log.Printf("Insert")
+	stmt, err := conn.Prepare("INSERT INTO test(name, age) VALUES(?, ?)")
+	must("Prepare statement", err)
+	for i, name := range []string{"John", "Jane", "Jack", "Jill"} {
+		_, err := stmt.Exec(name, i+30)
+		must(fmt.Sprintf("Inserting %s", name), err)
+	}
 	{
 		var r record
 		// Statment Query

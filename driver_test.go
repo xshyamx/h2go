@@ -17,6 +17,7 @@ limitations under the License.
 package h2go
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
@@ -472,5 +473,51 @@ func TestTx(t *testing.T) {
 			}
 		}
 		rows.Close()
+	})
+}
+func TestQueryRow(t *testing.T) {
+	runTests(t, func(dt *dbTest) {
+		var err error
+		var sent string
+		// drop table
+		sent = "DROP TABLE test IF EXISTS"
+		_, err = dt.conn.Exec(sent)
+		dt.checkErr(err)
+		// create table
+		sent = "CREATE TABLE IF NOT EXISTS test (id int auto_increment, name varchar(50), age int)"
+		_, err = dt.conn.Exec(sent)
+		dt.checkErr(err)
+		// insert records
+		stmt, err := dt.conn.Prepare("INSERT INTO test(name, age) VALUES(?, ?)")
+		dt.checkErr(err)
+		for i, name := range []string{"John", "Jane", "Jack", "Jill"} {
+			_, err := stmt.Exec(name, i+30)
+			dt.checkErr(err)
+		}
+		sent = "SELECT * FROM test where name=?"
+		stmt.Close()
+
+		// Stmt.QueryRow
+		r := struct {
+			id   int
+			name string
+			age  int
+		}{}
+		stmt, err = dt.conn.Prepare(sent)
+		dt.checkErr(err)
+		defer stmt.Close()
+		err = stmt.QueryRow("Jill").Scan(&r.id, &r.name, &r.age)
+		dt.checkErr(err)
+		// Conn.QueryRow
+		err = dt.conn.QueryRow(sent, "Jill").Scan(&r.id, &r.name, &r.age)
+		dt.checkErr(err)
+
+		// Tx.QueryRow
+		ctx := context.Background()
+		tx, err := dt.conn.BeginTx(ctx, nil)
+		defer tx.Commit()
+		dt.checkErr(err)
+		err = tx.QueryRowContext(ctx, "SELECT * FROM test where name=?", "Jill").Scan(&r.id, &r.name, &r.age)
+		dt.checkErr(err)
 	})
 }
